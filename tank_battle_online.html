@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5v5 Tank Battle — Online PvP</title>
+  <meta name="description"
+    content="Real-time 5v5 multiplayer tank battle game with online room codes. Play against friends over the internet.">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap');
+
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0;
+      margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box }
+
+    body { background: #060610; font-family: 'Orbitron', monospace }
+
+    #gw {
+      width: 100%; background: #060610; min-height: 580px;
+      position: relative; overflow: hidden; border-radius: 10px;
+      border: 1px solid #1a1a3a;
+    }
+
+    #c3d { width: 100%; height: 480px; display: block }
+
+    #nc {
+      position: absolute; top: 0; left: 0; width: 100%; height: 480px;
+      pointer-events: none; z-index: 1; overflow: hidden
+    }
+
+    .f-name {
+      position: absolute; color: white; font-size: 9px; font-weight: bold;
+      text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+      transform: translate(-50%, -100%); text-align: center;
+      pointer-events: none; margin-top: -15px; font-family: 'Inter', sans-serif;
+    }
+
+    .f-hp-bg {
+      width: 36px; height: 4px; background: #222; margin: 0 auto;
+      border-radius: 2px; overflow: hidden; border: 1px solid #111
+    }
+
+    .f-hp-fg { height: 100%; background: #00e676; transition: width 0.2s }
+
+    #hud {
+      position: absolute; top: 0; left: 0; right: 0; padding: 10px 14px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      pointer-events: none; z-index: 2
+    }
+
+    .hs { display: flex; flex-direction: column; gap: 4px; min-width: 140px }
+
+    .tn { font-size: 10px; color: #8888cc; letter-spacing: 2px; text-transform: uppercase }
+
+    .hbw {
+      width: 130px; height: 8px; background: #111; border-radius: 4px;
+      overflow: hidden; border: 1px solid #1a1a3a; position: relative;
+    }
+
+    .hb { height: 100%; border-radius: 4px; transition: width .3s }
+
+    .hv { font-size: 9px; color: #555 }
+
+    #ch {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      z-index: 2; pointer-events: none
+    }
+
+    .rb {
+      background: #0a0a1e; border: 1px solid #2a2a5a; border-radius: 4px;
+      padding: 3px 10px; font-size: 10px; color: #4a4a9a; letter-spacing: 3px
+    }
+
+    /* ABILITY HUD */
+    #ability-hud {
+      position: absolute; bottom: 66px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 10px; pointer-events: none; z-index: 3;
+      align-items: flex-end;
+    }
+
+    .ab-slot {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+    }
+
+    .ab-icon {
+      width: 42px; height: 42px; border-radius: 6px; border: 2px solid #333;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; position: relative; overflow: hidden;
+      background: rgba(10,10,30,0.8); transition: border-color 0.2s;
+    }
+
+    .ab-icon.ready { border-color: #4f6ef7; box-shadow: 0 0 8px #4f6ef744 }
+    .ab-icon.airstrike.ready { border-color: #ff6600; box-shadow: 0 0 8px #ff660044 }
+    .ab-icon.mine.ready { border-color: #ffcc00; box-shadow: 0 0 8px #ffcc0044 }
+    .ab-icon.soldier.ready { border-color: #00e676; box-shadow: 0 0 8px #00e67644 }
+
+    .ab-cooldown {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.7); transition: height 0.1s linear;
+    }
+
+    .ab-key {
+      font-size: 8px; color: #555; letter-spacing: 1px;
+    }
+
+    .ab-charges {
+      font-size: 9px; color: #aaa; letter-spacing: 1px;
+    }
+
+    /* AMMO */
+    #ah {
+      position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 4px; pointer-events: none; z-index: 2
+    }
+
+    .bd { width: 7px; height: 7px; border-radius: 50%; background: #ffea00 }
+    .bd.u { background: #222; border: 1px solid #333 }
+
+    /* CONTROL BAR */
+    #cb {
+      position: absolute; bottom: 0; left: 0; right: 0; background: #080818;
+      border-top: 1px solid #1a1a3a; padding: 8px 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      height: 64px; z-index: 2
+    }
+
+    .cg { display: flex; gap: 6px; align-items: center }
+
+    .cb {
+      background: #0d0d22; border: 1px solid #2a2a4a; border-radius: 4px;
+      color: #666; font-size: 10px; padding: 5px 10px; cursor: pointer;
+      font-family: 'Orbitron', monospace;
+    }
+
+    .cb:hover { background: #1a1a3a; border-color: #555; color: #ccc }
+
+    .cb.fi { background: #1a0008; border-color: #ff1744; color: #ff1744 }
+    .cb.ab-btn { background: #0a0a1e; border-color: #ff6600; color: #ff6600; font-size: 14px; padding: 5px 8px; }
+    .cb.ab-btn.mine-btn { border-color: #ffcc00; color: #ffcc00 }
+    .cb.ab-btn.soldier-btn { border-color: #00e676; color: #00e676 }
+
+    .sd {
+      width: 7px; height: 7px; border-radius: 50%; display: inline-block;
+      margin-right: 5px; background: #555
+    }
+    .sd.on { background: #00e676 }
+    .st { font-size: 10px; color: #555 }
+
+    /* OVERLAY */
+    #ov {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 64px;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; background: rgba(4, 4, 16, 0.95);
+      z-index: 5; border-radius: 10px 10px 0 0;
+    }
+
+    .mt {
+      font-size: 26px; color: #fff; letter-spacing: 6px; margin-bottom: 4px;
+      background: linear-gradient(90deg, #4f6ef7, #a04fff, #ff4f7b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .ms { font-size: 11px; color: #444; letter-spacing: 2px; margin-bottom: 24px }
+
+    .mb {
+      background: #0d0d22; border: 1px solid #2a2a4a; border-radius: 8px;
+      color: #aaa; font-size: 12px; padding: 11px 28px; cursor: pointer;
+      letter-spacing: 2px; margin: 4px; display: block; width: 200px;
+      text-align: center; font-family: 'Orbitron', monospace;
+      transition: all 0.2s;
+    }
+
+    .mb:hover { background: #1a1a3a; border-color: #4f6ef7; color: #4f6ef7; transform: translateY(-1px); }
+    .mb.p { border-color: #00e676; color: #00e676 }
+    .mb.p:hover { background: #0a2a0a }
+    .mb.d { border-color: #ff1744; color: #ff1744 }
+    .mb.d:hover { background: #1a0008 }
+
+    .ri {
+      background: #0d0d22; border: 1px solid #2a2a4a; border-radius: 6px;
+      color: #ccc; font-size: 16px; padding: 8px 12px; width: 180px;
+      text-align: center; letter-spacing: 4px; outline: none; margin: 6px;
+      font-family: 'Orbitron', monospace;
+    }
+
+    .ri:focus { border-color: #4f6ef7; box-shadow: 0 0 8px #4f6ef744 }
+
+    .pg { display: flex; flex-direction: column; align-items: center }
+
+    #kf {
+      position: absolute; top: 48px; left: 50%; transform: translateX(-50%);
+      z-index: 3; pointer-events: none
+    }
+
+    .km {
+      font-size: 11px; color: #ff6b6b; background: rgba(0,0,0,0.8);
+      padding: 3px 10px; border-radius: 4px; display: none;
+      border: 1px solid #ff6b6b44; font-family: 'Inter', sans-serif;
+    }
+
+    .errtext {
+      font-size: 10px; color: #ff6b6b; min-height: 16px; margin: 2px 0; text-align: center
+    }
+
+    /* TANK TYPE LABEL */
+    .tank-type-badge {
+      font-size: 8px; color: #888; letter-spacing: 1px;
+    }
+
+    /* Minimap */
+    #minimap {
+      position: absolute; top: 10px; right: 14px; width: 90px; height: 90px;
+      background: rgba(8,8,24,0.8); border: 1px solid #2a2a5a;
+      border-radius: 4px; z-index: 4; pointer-events: none; overflow: hidden;
+    }
+
+    #minimap-canvas { width: 90px; height: 90px; }
+
+    /* ORB PICKUP NOTIFICATION */
+    .orb-notify {
+      position: absolute; font-size: 12px; pointer-events: none;
+      font-family: 'Orbitron', monospace; font-weight: 700;
+      animation: floatUp 1.5s ease-out forwards; z-index: 10;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-60px); }
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2 class="sr-only">5v5 Tank Battle Game</h2>
+
+  <div id="gw">
+    <canvas id="c3d"></canvas>
+    <div id="nc"></div>
+    <canvas id="minimap-canvas" id2="minimap"></canvas>
+
+    <div id="hud">
+      <div class="hs">
+        <span class="tn" id="p1n">YOU</span>
+        <div class="hbw">
+          <div class="hb" id="p1b" style="width:100%;background:#00e676"></div>
+        </div>
+        <span class="hv" id="p1v">300 HP</span>
+        <span class="tank-type-badge" id="p1type">STANDARD</span>
+      </div>
+      <div id="ch">
+        <div class="rb" id="rd">NO ROOM</div>
+      </div>
+    </div>
+
+    <!-- MINIMAP -->
+    <div id="minimap">
+      <canvas id="minimap-canvas2" width="90" height="90"></canvas>
+    </div>
+
+    <div id="kf">
+      <div class="km" id="km"></div>
+    </div>
+
+    <div id="ah">
+      <div class="bd" id="b0"></div>
+      <div class="bd" id="b1"></div>
+      <div class="bd" id="b2"></div>
+      <div class="bd" id="b3"></div>
+      <div class="bd" id="b4"></div>
+    </div>
+
+    <!-- ABILITY HUD -->
+    <div id="ability-hud">
+      <div class="ab-slot">
+        <div class="ab-icon airstrike" id="ab-airstrike-icon">
+          💣
+          <div class="ab-cooldown" id="ab-airstrike-cd" style="height:100%"></div>
+        </div>
+        <span class="ab-key">Q</span>
+        <span class="ab-charges" id="ab-airstrike-count">0x</span>
+      </div>
+      <div class="ab-slot">
+        <div class="ab-icon mine" id="ab-mine-icon">
+          💥
+          <div class="ab-cooldown" id="ab-mine-cd" style="height:100%"></div>
+        </div>
+        <span class="ab-key">E</span>
+        <span class="ab-charges" id="ab-mine-count">0x</span>
+      </div>
+      <div class="ab-slot">
+        <div class="ab-icon soldier" id="ab-soldier-icon">
+          🪖
+          <div class="ab-cooldown" id="ab-soldier-cd" style="height:100%"></div>
+        </div>
+        <span class="ab-key">R</span>
+        <span class="ab-charges" id="ab-soldier-count">0x</span>
+      </div>
+    </div>
+
+    <div id="cb">
+      <div class="cg"><span class="sd" id="cd"></span><span class="st" id="ct">OFFLINE</span></div>
+      <div class="cg">
+        <button class="cb" id="bl">◄ A</button>
+        <button class="cb" id="bu">▲ W</button>
+        <button class="cb" id="bd2">▼ S</button>
+        <button class="cb" id="br">► D</button>
+        <button class="cb fi" id="bfi">⬤ FIRE</button>
+        <button class="cb ab-btn" id="bq">💣 Q</button>
+        <button class="cb ab-btn mine-btn" id="be">💥 E</button>
+        <button class="cb ab-btn soldier-btn" id="br_btn">🪖 R</button>
+      </div>
+      <div class="cg"><button class="mb" id="bmenu" style="padding:5px 12px;font-size:10px;width:auto">MENU</button></div>
+    </div>
+
+    <div id="map-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(4,4,16,0.9); z-index:100; flex-direction:column; align-items:center; justify-content:center;">
+      <h2 style="color:#ff6600; font-family:'Orbitron', monospace; margin-bottom:10px; letter-spacing:4px; text-shadow: 0 0 10px #ff6600;">SELECT AIRSTRIKE TARGET</h2>
+      <canvas id="strike-map" width="400" height="400" style="border:2px solid #ff6600; cursor:crosshair; background:#080818; border-radius: 8px; box-shadow: 0 0 20px #ff660088;"></canvas>
+      <button class="mb d" style="margin-top:20px; width:150px" onclick="document.getElementById('map-overlay').style.display='none'">CANCEL</button>
+    </div>
+
+    <div id="ov">
+      <div class="mt">TANK BATTLE</div>
+      <div class="ms">5 V 5 · ONLINE PvP · ABILITIES</div>
+
+      <div class="pg" id="pg-main">
+        <div style="font-size:10px;color:#444;margin-bottom:10px;letter-spacing:1px">ENTER YOUR NAME</div>
+        <input class="ri" id="p-name" maxlength="10" placeholder="PLAYER" value="PLAYER" style="margin-bottom:8px">
+        <div style="font-size:10px;color:#444;margin-bottom:6px;letter-spacing:1px">CHOOSE TANK CLASS</div>
+        <select id="tank-class" style="background:#0d0d22;border:1px solid #2a2a4a;border-radius:6px;color:#aaa;font-size:11px;padding:6px 12px;width:180px;margin-bottom:14px;font-family:'Orbitron',monospace;outline:none;">
+          <option value="standard">⚙ STANDARD  — 300 HP · ×1.0 speed</option>
+          <option value="light">⚡ LIGHT     — 180 HP · ×1.6 speed</option>
+          <option value="heavy">🛡 HEAVY     — 500 HP · ×0.6 speed</option>
+          <option value="sniper">🎯 SNIPER    — 220 HP · ×0.9 speed</option>
+        </select>
+
+        <button class="mb p" id="btn-create">CREATE ROOM</button>
+        <button class="mb" id="btn-join">JOIN ROOM</button>
+        <button class="mb" id="btn-solo">SOLO PRACTICE</button>
+      </div>
+
+      <div class="pg" id="pg-create" style="display:none">
+        <div style="font-size:11px;color:#444;margin-bottom:10px">SHARE THIS CODE WITH YOUR FRIEND</div>
+        <div style="font-size:32px;color:#4f6ef7;letter-spacing:8px;margin-bottom:14px" id="gc">----</div>
+        <div style="font-size:10px;color:#444;margin-bottom:14px" id="ws">CONNECTING...</div>
+        <button class="mb d" id="btn-cancel">CANCEL</button>
+      </div>
+
+      <div class="pg" id="pg-join" style="display:none">
+        <div style="font-size:11px;color:#444;margin-bottom:10px">ENTER FRIEND'S ROOM CODE</div>
+        <input class="ri" id="ci" maxlength="4" placeholder="XXXX">
+        <div class="errtext" id="je"></div>
+        <button class="mb p" id="btn-dojoin" style="margin-top:4px">JOIN</button>
+        <button class="mb" id="btn-back">BACK</button>
+      </div>
+
+      <div class="pg" id="pg-result" style="display:none">
+        <div style="font-size:22px;margin-bottom:14px" id="rt">YOU WIN!</div>
+        <button class="mb p" id="btn-again">PLAY AGAIN</button>
+        <button class="mb" id="btn-tomenu">MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const ARENA = 48; // 3x bigger than original 16
+      const PEER_PREFIX = 'TKB2';
+
+      // ---- TANK TYPE DEFINITIONS ----
+      const TANK_TYPES = {
+        standard: { label: 'STANDARD', maxHp: 300, speed: 5.0, fireRate: 1.8, color: 0x3a7a25, turretColor: 0x2d5a1b, bulletDmg: 20, bulletSpeed: 14, isSoldier: false },
+        light:    { label: 'LIGHT',    maxHp: 180, speed: 8.0, fireRate: 1.0, color: 0x2a6aaa, turretColor: 0x1a4a8a, bulletDmg: 15, bulletSpeed: 18, isSoldier: false },
+        heavy:    { label: 'HEAVY',    maxHp: 500, speed: 3.0, fireRate: 3.5, color: 0x7a5020, turretColor: 0x5a3010, bulletDmg: 45, bulletSpeed: 10, isSoldier: false },
+        sniper:   { label: 'SNIPER',   maxHp: 220, speed: 4.5, fireRate: 2.5, color: 0x6a2a8a, turretColor: 0x4a1a6a, bulletDmg: 80, bulletSpeed: 22, isSoldier: false },
+        soldier:  { label: 'SOLDIER',  maxHp: 40,  speed: 6.5, fireRate: 1.2, color: 0x555555, turretColor: 0x222222, bulletDmg: 6, bulletSpeed: 12, isSoldier: true },
+      };
+
+      // Enemy AI uses random type
+      const AI_TYPES = ['standard', 'light', 'heavy', 'sniper'];
+      const ENEMY_COLORS = { standard: 0x8b1a1a, light: 0xaa3030, heavy: 0x6a2010, sniper: 0x8a1a5a };
+      const ENEMY_TURRET = { standard: 0x550000, light: 0x771010, heavy: 0x441000, sniper: 0x551040 };
+
+      let scene, camera, renderer, clock;
+      let bullets = [], obstacles = [], explosions = [], mines = [], orbs = [], ramps = [];
+      let tanks = {};
+      let myTankId = 'p1';
+      let opponentName = 'ENEMY';
+      let myTankType = 'standard';
+
+      let keys = {}, gameActive = false, soloMode = false, onlineMode = false, gameOver = false;
+      let ammo = 5, reloading = false;
+      let isHost = false;
+      let peer = null, conn = null, stateTimer = 0;
+
+      // Raycaster for mouse aiming
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      let intersectPoint = null;
+      const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.6); // Turret height is roughly 0.6
+
+      // Ability state
+      let airstrikeCharges = 0, mineCharges = 0, soldierCharges = 0;
+      let airstrikeCd = 0, mineCd = 0, soldierCd = 0;
+      const AIRSTRIKE_CD = 15; // seconds
+      const MINE_CD = 5;
+      const SOLDIER_CD = 20;
+
+      // Orb spawn timer
+      let orbSpawnTimer = 0;
+      const ORB_SPAWN_INTERVAL = 6; // seconds
+      const MAX_ORBS = 12;
+
+      /* ===================== AUDIO ===================== */
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      function playSound(type, volMultiplier = 1) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const t = audioCtx.currentTime;
+        const gain = audioCtx.createGain();
+        gain.connect(audioCtx.destination);
+        
+        if (type === 'explode') {
+          const bufferSize = audioCtx.sampleRate * 0.6;
+          const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+          const noise = audioCtx.createBufferSource();
+          noise.buffer = buffer;
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(800, t);
+          filter.frequency.exponentialRampToValueAtTime(50, t + 0.5);
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.gain.setValueAtTime(0.5 * volMultiplier, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
+          noise.start(t);
+        } else {
+          const osc = audioCtx.createOscillator();
+          osc.connect(gain);
+          if (type === 'shoot') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, t);
+            osc.frequency.exponentialRampToValueAtTime(40, t + 0.15);
+            gain.gain.setValueAtTime(0.15 * volMultiplier, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+            osc.start(t); osc.stop(t + 0.15);
+          } else if (type === 'shoot_heavy') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, t);
+            osc.frequency.exponentialRampToValueAtTime(30, t + 0.25);
+            gain.gain.setValueAtTime(0.2 * volMultiplier, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+            osc.start(t); osc.stop(t + 0.25);
+          } else if (type === 'shoot_light') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(300, t);
+            osc.frequency.exponentialRampToValueAtTime(100, t + 0.08);
+            gain.gain.setValueAtTime(0.08 * volMultiplier, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
+            osc.start(t); osc.stop(t + 0.08);
+          } else if (type === 'pickup') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, t);
+            osc.frequency.setValueAtTime(600, t + 0.1);
+            gain.gain.setValueAtTime(0.2 * volMultiplier, t);
+            gain.gain.linearRampToValueAtTime(0.01, t + 0.2);
+            osc.start(t); osc.stop(t + 0.2);
+          } else if (type === 'ui') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, t);
+            gain.gain.setValueAtTime(0.1 * volMultiplier, t);
+            gain.gain.linearRampToValueAtTime(0.01, t + 0.05);
+            osc.start(t); osc.stop(t + 0.05);
+          } else if (type === 'ability') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, t);
+            osc.frequency.linearRampToValueAtTime(500, t + 0.3);
+            gain.gain.setValueAtTime(0.2 * volMultiplier, t);
+            gain.gain.linearRampToValueAtTime(0.01, t + 0.4);
+            osc.start(t); osc.stop(t + 0.4);
+          }
+        }
+      }
+
+      /* ===================== UI HELPERS ===================== */
+
+      function page(id) {
+        ['pg-main','pg-create','pg-join','pg-result'].forEach(p => {
+          const el = document.getElementById(p);
+          if (p === id) { el.style.display='flex'; el.style.flexDirection='column'; }
+          else el.style.display='none';
+        });
+      }
+      function showOv() { document.getElementById('ov').style.display='flex'; }
+      function hideOv() { document.getElementById('ov').style.display='none'; }
+      function setStatus(on, txt) {
+        document.getElementById('cd').className='sd'+(on?' on':'');
+        document.getElementById('ct').textContent=txt;
+      }
+      function setRoomCode(code) { document.getElementById('rd').textContent=code; }
+
+      function hpCol(h,m) { return h>m*0.6?'#00e676':h>m*0.3?'#ffea00':'#ff1744'; }
+      function setHP(who,val,maxVal) {
+        const b=document.getElementById(who+'b'),v=document.getElementById(who+'v');
+        b.style.width=Math.max(0,(val/maxVal)*100)+'%';
+        b.style.background=hpCol(val,maxVal);
+        v.textContent=Math.max(0,val)+' HP';
+      }
+      function updAmmo() {
+        for(let i=0;i<5;i++)
+          document.getElementById('b'+i).className='bd'+(i<ammo?'':' u');
+      }
+      function showKill(msg,col) {
+        const e=document.getElementById('km');
+        e.textContent=msg; e.style.color=col||'#ff6b6b'; e.style.display='block';
+        setTimeout(()=>e.style.display='none',2500);
+      }
+
+      function updAbilityHUD() {
+        // Airstrike
+        const asCd = document.getElementById('ab-airstrike-cd');
+        const asIcon = document.getElementById('ab-airstrike-icon');
+        const asCount = document.getElementById('ab-airstrike-count');
+        if(airstrikeCd > 0) {
+          asCd.style.height = (airstrikeCd/AIRSTRIKE_CD*100)+'%';
+          asIcon.classList.remove('ready');
+        } else {
+          asCd.style.height = '0%';
+          if(airstrikeCharges > 0) asIcon.classList.add('ready');
+          else asIcon.classList.remove('ready');
+        }
+        asCount.textContent = airstrikeCharges+'x';
+
+        // Mine
+        const mCd = document.getElementById('ab-mine-cd');
+        const mIcon = document.getElementById('ab-mine-icon');
+        const mCount = document.getElementById('ab-mine-count');
+        if(mineCd > 0) {
+          mCd.style.height = (mineCd/MINE_CD*100)+'%';
+          mIcon.classList.remove('ready');
+        } else {
+          mCd.style.height = '0%';
+          if(mineCharges > 0) mIcon.classList.add('ready');
+          else mIcon.classList.remove('ready');
+        }
+        mCount.textContent = mineCharges+'x';
+
+        // Soldier
+        const sCd = document.getElementById('ab-soldier-cd');
+        const sIcon = document.getElementById('ab-soldier-icon');
+        const sCount = document.getElementById('ab-soldier-count');
+        if(soldierCd > 0) {
+          sCd.style.height = (soldierCd/SOLDIER_CD*100)+'%';
+          sIcon.classList.remove('ready');
+        } else {
+          sCd.style.height = '0%';
+          if(soldierCharges > 0) sIcon.classList.add('ready');
+          else sIcon.classList.remove('ready');
+        }
+        sCount.textContent = soldierCharges+'x';
+      }
+
+      /* ===================== ONLINE PvP ===================== */
+
+      function randCode() {
+        const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code='';
+        for(let i=0;i<4;i++) code+=chars[Math.random()*chars.length|0];
+        return code;
+      }
+
+      function destroyPeer() {
+        if(conn){try{conn.close();}catch(e){}conn=null;}
+        if(peer){try{peer.destroy();}catch(e){}peer=null;}
+        onlineMode=false;
+      }
+
+      function createRoom() {
+        destroyPeer(); isHost=true;
+        const code=randCode();
+        document.getElementById('gc').textContent=code;
+        setRoomCode(code);
+        document.getElementById('ws').textContent='CONNECTING TO SERVER...';
+        page('pg-create');
+        peer=new Peer(PEER_PREFIX+code,{debug:0});
+        peer.on('open',()=>document.getElementById('ws').textContent='WAITING FOR PLAYER 2...');
+        peer.on('connection',c=>{conn=c;document.getElementById('ws').textContent='PLAYER JOINED! STARTING...';setupConn();});
+        peer.on('error',err=>{
+          if(err.type==='unavailable-id'){destroyPeer();setTimeout(createRoom,200);}
+          else document.getElementById('ws').textContent='⚠ '+err.type+'. Try again.';
+        });
+      }
+
+      function joinRoom(code) {
+        destroyPeer(); isHost=false;
+        document.getElementById('je').textContent='';
+        document.getElementById('btn-dojoin').textContent='CONNECTING...';
+        peer=new Peer({debug:0});
+        peer.on('open',()=>{conn=peer.connect(PEER_PREFIX+code,{reliable:true});setupConn();});
+        peer.on('error',err=>{
+          document.getElementById('je').textContent='Error: '+err.type+'. Check code.';
+          document.getElementById('btn-dojoin').textContent='JOIN';
+          destroyPeer();
+        });
+        setTimeout(()=>{
+          if(!onlineMode){
+            document.getElementById('je').textContent='Timed out. Is the code correct?';
+            document.getElementById('btn-dojoin').textContent='JOIN';
+            destroyPeer();
+          }
+        },12000);
+      }
+
+      function setupConn() {
+        conn.on('open',()=>{
+          onlineMode=true; soloMode=false;
+          setStatus(true,isHost?'HOSTING':'ONLINE');
+          document.getElementById('btn-dojoin').textContent='JOIN';
+          const myName=document.getElementById('p-name').value.trim()||'PLAYER';
+          send({type:'init',name:myName,tankType:myTankType});
+          startOnlineGame();
+        });
+        conn.on('data',netMsg);
+        conn.on('close',()=>{
+          setStatus(false,'DISCONNECTED'); onlineMode=false;
+          if(gameActive&&!gameOver){
+            showKill('OPPONENT DISCONNECTED!','#ffaa00'); gameActive=false;
+            setTimeout(()=>{showOv();page('pg-main');},2500);
+          }
+        });
+        conn.on('error',err=>{document.getElementById('je').textContent='Conn error: '+(err.message||err.type);document.getElementById('btn-dojoin').textContent='JOIN';});
+      }
+
+      function send(data){if(conn&&conn.open)try{conn.send(data);}catch(e){}}
+
+      function netMsg(data) {
+        if(!data||!data.type) return;
+        if(data.type==='init'){
+          opponentName=data.name;
+          const oppId=isHost?'j':'h';
+          if(tanks[oppId]){tanks[oppId].name=data.name;const txt=document.getElementById('ntxt-'+oppId);if(txt)txt.textContent=data.name;}
+          return;
+        }
+        if(data.type==='restart'){doRestart();return;}
+        if(data.type==='gameover'){if(!gameOver)endGame(data.winTeam===tanks[myTankId]?.team);return;}
+        if(!gameActive||gameOver) return;
+        switch(data.type){
+          case 'state':
+            data.s.forEach(st=>{
+              if(tanks[st.id]&&tanks[st.id].hp>0){
+                tanks[st.id].mesh.position.x=st.x;
+                tanks[st.id].mesh.position.z=st.z;
+                tanks[st.id].mesh.rotation.y=st.ry;
+              }
+            }); break;
+          case 'fire':
+            spawnBullet(new THREE.Vector3(data.px,data.py,data.pz), new THREE.Vector3(data.vx,data.vy,data.vz), data.owner,
+              tanks[data.owner]?.team===1?0xffea00:0xff4444,
+              tanks[data.owner]?.tankDef?.bulletSpeed||14,
+              tanks[data.owner]?.tankDef?.bulletDmg||20);
+            break;
+          case 'damage':
+            damageTank(data.id,data.amt); break;
+          case 'mine_place':
+            placeMine(data.x,data.z,data.team,true); break;
+          case 'airstrike':
+            doAirstrikeAt(data.x,data.z,data.team,true); break;
+          case 'spawn_soldiers':
+            spawnSoldiersAt(data.owner, data.x, data.z, data.team); break;
+        }
+      }
+
+      function startOnlineGame() {
+        setRoomCode(document.getElementById('gc').textContent||'ROOM');
+        doRestart();
+      }
+
+      /* ===================== THREE.JS / TANKS ===================== */
+
+      function buildTank(col,turretCol,type) {
+        if(type === 'soldier') {
+          const g=new THREE.Group();
+          const body=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,0.8,8), new THREE.MeshLambertMaterial({color:col}));
+          body.position.y=0.4; body.castShadow=true; g.add(body);
+          
+          const turretGroup = new THREE.Group();
+          const head=new THREE.Mesh(new THREE.SphereGeometry(0.25,8,8), new THREE.MeshLambertMaterial({color:0xffccaa}));
+          head.position.y=0.9; head.castShadow=true; turretGroup.add(head);
+          const gun=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.6,5), new THREE.MeshLambertMaterial({color:0x222222}));
+          gun.rotation.x=Math.PI/2; gun.position.set(0.15,0.6,0.3); turretGroup.add(gun);
+          g.add(turretGroup);
+          g.userData.turretGroup = turretGroup;
+          return g;
+        }
+
+        const g=new THREE.Group();
+        // Scale heavy tanks bigger
+        const scale = type==='heavy'?1.3:type==='light'?0.85:type==='sniper'?0.95:1.0;
+
+        const body=new THREE.Mesh(
+          new THREE.BoxGeometry(1.2*scale,0.45*scale,1.8*scale),
+          new THREE.MeshLambertMaterial({color:col})
+        );
+        body.position.y=0.22*scale; body.castShadow=true; g.add(body);
+
+        const turretGroup = new THREE.Group();
+        const turret=new THREE.Mesh(
+          new THREE.CylinderGeometry(0.34*scale,0.37*scale,0.27*scale,8),
+          new THREE.MeshLambertMaterial({color:turretCol})
+        );
+        turret.position.set(0,0.58*scale,0.1); turretGroup.add(turret);
+
+        // Sniper has a long barrel
+        const barrelLen = type==='sniper'?1.4:0.8;
+        const barrel=new THREE.Mesh(
+          new THREE.CylinderGeometry(0.06*scale,0.07*scale,barrelLen*scale,6),
+          new THREE.MeshLambertMaterial({color:0x222222})
+        );
+        barrel.rotation.x=Math.PI/2;
+        barrel.position.set(0,0.6*scale,(0.7+(barrelLen-0.8)*0.5)*scale);
+        turretGroup.add(barrel);
+        
+        g.add(turretGroup);
+        g.userData.turretGroup = turretGroup;
+
+        [-0.65,0.65].forEach(x=>{
+          const t=new THREE.Mesh(
+            new THREE.BoxGeometry(0.22*scale,0.28*scale,1.9*scale),
+            new THREE.MeshLambertMaterial({color:0x111111})
+          );
+          t.position.set(x*scale,0.14*scale,0); g.add(t);
+        });
+        [-0.7,-0.1,0.5].forEach(z=>{
+          [-0.72,0.72].forEach(x=>{
+            const w=new THREE.Mesh(
+              new THREE.CylinderGeometry(0.17*scale,0.17*scale,0.1,7),
+              new THREE.MeshLambertMaterial({color:0x1a1a1a})
+            );
+            w.rotation.z=Math.PI/2; w.position.set(x*scale,0.17*scale,z*scale); g.add(w);
+          });
+        });
+        return g;
+      }
+
+      function spawnTank(id,isPlayer,team,name,x,z,ry,typeKey) {
+        typeKey = typeKey || (team===1?'standard':AI_TYPES[Math.floor(Math.random()*AI_TYPES.length)]);
+        const def = TANK_TYPES[typeKey] || TANK_TYPES.standard;
+        let col, turretCol;
+        if(team===1) { col=def.color; turretCol=def.turretColor; }
+        else { col=ENEMY_COLORS[typeKey]||0x8b1a1a; turretCol=ENEMY_TURRET[typeKey]||0x550000; }
+
+        const t=buildTank(col,turretCol,typeKey);
+        t.position.set(x,0,z); t.rotation.y=ry; scene.add(t);
+
+        const lbl=document.createElement('div');
+        lbl.className='f-name';
+        lbl.innerHTML=`<div id="ntxt-${id}" style="margin-bottom:1px">${name}</div><div style="font-size:7px;color:#888;margin-bottom:2px">${def.label}</div><div class="f-hp-bg"><div class="f-hp-fg" id="hpfg-${id}"></div></div>`;
+        document.getElementById('nc').appendChild(lbl);
+
+        tanks[id]={id,isPlayer,team,name,maxHp:def.maxHp,hp:def.maxHp,mesh:t,lbl,
+          aiTimer:Math.random()*2,tankType:typeKey,tankDef:def,stuckDir:0};
+      }
+
+      function initThree() {
+        const canvas=document.getElementById('c3d');
+        const W=canvas.parentElement.offsetWidth||900, H=480;
+        renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+        renderer.setSize(W,H); renderer.shadowMap.enabled=true;
+        renderer.setClearColor(0x060610,1);
+
+        scene=new THREE.Scene();
+        scene.fog=new THREE.Fog(0x060610,50,130);
+
+        camera=new THREE.PerspectiveCamera(55,W/H,0.1,200);
+        clock=new THREE.Clock();
+
+        scene.add(new THREE.AmbientLight(0x334466,1.2));
+        const dir=new THREE.DirectionalLight(0xffffff,1.8);
+        dir.position.set(20,40,20); dir.castShadow=true;
+        dir.shadow.mapSize.width=2048; dir.shadow.mapSize.height=2048;
+        dir.shadow.camera.near=0.5; dir.shadow.camera.far=200;
+        dir.shadow.camera.left=-ARENA*1.5; dir.shadow.camera.right=ARENA*1.5;
+        dir.shadow.camera.top=ARENA*1.5; dir.shadow.camera.bottom=-ARENA*1.5;
+        scene.add(dir);
+        scene.add(new THREE.HemisphereLight(0x334466,0x221133,0.6));
+
+        // Large floor with checkerboard feel
+        const floorGeo=new THREE.PlaneGeometry(ARENA*2,ARENA*2,40,40);
+        const floor=new THREE.Mesh(floorGeo,new THREE.MeshLambertMaterial({color:0x141e0c}));
+        floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+        scene.add(new THREE.GridHelper(ARENA*2,60,0x1a2a12,0x1a2a12));
+
+        // Walls
+        const wm=new THREE.MeshLambertMaterial({color:0x2a3a20});
+        [
+          [0,1,-ARENA,ARENA*2,2,1],
+          [0,1,ARENA,ARENA*2,2,1],
+          [ARENA,1,0,1,2,ARENA*2],
+          [-ARENA,1,0,1,2,ARENA*2]
+        ].forEach(([x,y,z,w,h,d])=>{
+          const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wm);
+          m.position.set(x,y,z); scene.add(m);
+        });
+
+        // Lots of obstacles for big arena
+        buildObstacles();
+      }
+
+      function getElevation(x, z) {
+          let elevation = 0;
+          for (let r of ramps) {
+              if (Math.abs(x - r.x) < r.w/2 && Math.abs(z - r.z) < r.d/2) {
+                  let progress = 0;
+                  if (r.dir === 'x') progress = (x - (r.x - r.w/2)) / r.w;
+                  else if (r.dir === '-x') progress = ((r.x + r.w/2) - x) / r.w;
+                  else if (r.dir === 'z') progress = (z - (r.z - r.d/2)) / r.d;
+                  else if (r.dir === '-z') progress = ((r.z + r.d/2) - z) / r.d;
+                  elevation = Math.max(elevation, progress * r.h);
+              }
+          }
+          return elevation;
+      }
+
+      function buildObstacles() {
+        const om=new THREE.MeshLambertMaterial({color:0x3a4a2a});
+        const om2=new THREE.MeshLambertMaterial({color:0x4a3a1a});
+        const rm=new THREE.MeshLambertMaterial({color:0x5a5a3a}); // ramp color
+
+        ramps = [
+          { x: -16, z: 0, w: 6, d: 8, dir: 'x', h: 3 },
+          { x: 16, z: 0, w: 6, d: 8, dir: '-x', h: 3 },
+          { x: 0, z: -16, w: 8, d: 6, dir: 'z', h: 3 },
+          { x: 0, z: 16, w: 8, d: 6, dir: '-z', h: 3 }
+        ];
+
+        ramps.forEach(r => {
+           const L = Math.sqrt(r.w*r.w + r.h*r.h);
+           const isX = r.dir === 'x' || r.dir === '-x';
+           const geo = new THREE.BoxGeometry(isX?L:r.w, 0.5, isX?r.d:L);
+           const m = new THREE.Mesh(geo, rm);
+           
+           if (isX) {
+               const angle = Math.atan2(r.h, r.w);
+               m.rotation.z = r.dir === 'x' ? angle : -angle;
+           } else {
+               const angle = Math.atan2(r.h, r.d);
+               m.rotation.x = r.dir === 'z' ? angle : -angle;
+           }
+           m.position.set(r.x, r.h/2 - 0.2, r.z);
+           m.castShadow = true; m.receiveShadow = true;
+           scene.add(m);
+        });
+
+        // Symmetrical cluster positions
+        const positions = [
+          // Center cross
+          [0,4],[0,-4],[4,0],[-4,0],
+          // Inner ring
+          [-8,8],[8,8],[-8,-8],[8,-8],
+          [-12,0],[12,0],[0,12],[0,-12],
+          // Mid ring
+          [-16,16],[16,16],[-16,-16],[16,-16],
+          [-20,8],[20,8],[-20,-8],[20,-8],
+          [-8,20],[8,20],[-8,-20],[8,-20],
+          // Outer ring
+          [-28,0],[28,0],[0,28],[0,-28],
+          [-24,20],[24,20],[-24,-20],[24,-20],
+          [-20,28],[20,28],[-20,-28],[20,-28],
+          // Extra scatter
+          [-34,12],[34,12],[-34,-12],[34,-12],
+          [-12,34],[12,34],[-12,-34],[12,-34],
+          [-38,0],[38,0],[0,38],[0,-38],
+          [-30,30],[-30,-30],[30,30],[30,-30],
+        ];
+
+        positions.forEach(([x,z])=>{
+          const h=1.2+Math.random()*1.5;
+          const w=1.2+Math.random()*1.0;
+          const isTall=Math.random()<0.3;
+          const geo=isTall?new THREE.BoxGeometry(w,h+1.5,w):new THREE.BoxGeometry(w,h,w*1.4);
+          const mat=Math.random()<0.5?om:om2;
+          const o=new THREE.Mesh(geo,mat);
+          o.position.set(x,h/2,z); o.castShadow=true; o.receiveShadow=true;
+          scene.add(o);
+          obstacles.push({x,z,r:Math.max(w,w*1.4)*0.5+0.1});
+        });
+      }
+
+      /* ===================== ABILITY ORBS ===================== */
+
+      function spawnOrb() {
+        if(orbs.length>=MAX_ORBS) return;
+        const types=['airstrike','mine','soldier'];
+        const t=types[Math.floor(Math.random()*types.length)];
+        const margin=5;
+        let x,z,tries=0;
+        do {
+          x=(Math.random()*2-1)*(ARENA-margin);
+          z=(Math.random()*2-1)*(ARENA-margin);
+          tries++;
+        } while(collides(x,z,1.5)&&tries<30);
+
+        const col=t==='airstrike'?0xff6600:t==='mine'?0xffcc00:0x00e676;
+        const geo=new THREE.SphereGeometry(0.5,12,12);
+        const mat=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.85});
+        const mesh=new THREE.Mesh(geo,mat);
+        mesh.position.set(x,0.8,z);
+
+        // Glow ring
+        const ringGeo=new THREE.TorusGeometry(0.7,0.08,8,24);
+        const ringMat=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.5});
+        const ring=new THREE.Mesh(ringGeo,ringMat);
+        ring.position.set(x,0.8,z); ring.rotation.x=Math.PI/2;
+
+        scene.add(mesh); scene.add(ring);
+        orbs.push({mesh,ring,type:t,x,z,r:1.2,phase:Math.random()*Math.PI*2});
+      }
+
+      function updateOrbs(dt) {
+        if(!gameActive||gameOver) return;
+        orbSpawnTimer+=dt;
+        if(orbSpawnTimer>=ORB_SPAWN_INTERVAL){orbSpawnTimer=0;spawnOrb();}
+
+        for(let i=orbs.length-1;i>=0;i--){
+          const orb=orbs[i];
+          orb.phase+=dt*2;
+          orb.mesh.position.y=0.8+Math.sin(orb.phase)*0.3;
+          orb.ring.position.y=orb.mesh.position.y;
+          orb.ring.rotation.z+=dt*1.5;
+          orb.mesh.material.opacity=0.6+Math.sin(orb.phase)*0.25;
+
+          // Check player pickup
+          const myT=tanks[myTankId];
+          if(myT&&myT.hp>0){
+            const dx=myT.mesh.position.x-orb.x, dz=myT.mesh.position.z-orb.z;
+            if(Math.sqrt(dx*dx+dz*dz)<orb.r+0.8){
+              playSound('pickup');
+              if(orb.type==='airstrike'){airstrikeCharges++;showKill('💣 AIRSTRIKE READY!','#ff8800');}
+              else if(orb.type==='mine'){mineCharges++;showKill('💥 MINE READY!','#ffcc00');}
+              else {soldierCharges++;showKill('🪖 SQUAD READY!','#00e676');}
+              updAbilityHUD();
+              showOrbNotify(myT.mesh.position.x,myT.mesh.position.z,orb.type);
+              scene.remove(orb.mesh); scene.remove(orb.ring);
+              orbs.splice(i,1); continue;
+            }
+          }
+        }
+      }
+
+      function showOrbNotify(wx,wz,type) {
+        const tempV=new THREE.Vector3(wx,1.5,wz);
+        tempV.project(camera);
+        const cw=renderer.domElement.clientWidth, ch=renderer.domElement.clientHeight;
+        const sx=(tempV.x*.5+.5)*cw, sy=(tempV.y*-.5+.5)*ch;
+        const el=document.createElement('div');
+        el.className='orb-notify';
+        el.style.left=sx+'px'; el.style.top=(sy-30)+'px';
+        el.style.color=type==='airstrike'?'#ff8800':type==='mine'?'#ffcc00':'#00e676';
+        el.textContent=type==='airstrike'?'+1 💣':type==='mine'?'+1 💥':'+1 🪖';
+        document.getElementById('nc').appendChild(el);
+        setTimeout(()=>el.remove(),1500);
+      }
+
+      /* ===================== BULLETS & EXPLOSIONS ===================== */
+
+      function fireBullet() {
+        if(!gameActive||ammo<=0||reloading||gameOver) return;
+        const myT=tanks[myTankId];
+        if(!myT||myT.hp<=0) return;
+        ammo--; updAmmo();
+        if(ammo===0){
+          reloading=true;
+          setTimeout(()=>{ammo=5;reloading=false;updAmmo();},3000);
+        }
+        const def=myT.tankDef;
+        
+        let ry = myT.turretRy !== undefined ? myT.turretRy : myT.mesh.rotation.y;
+        let vel = new THREE.Vector3(Math.sin(ry), 0, Math.cos(ry)).multiplyScalar(def.bulletSpeed);
+        if (intersectPoint) {
+           vel.copy(intersectPoint).sub(myT.mesh.position);
+           vel.y += 0.6; // target slightly above ground
+           vel.normalize().multiplyScalar(def.bulletSpeed);
+        }
+
+        const spawnPos = myT.mesh.position.clone();
+        spawnPos.y += 0.6;
+        spawnBullet(spawnPos, vel, myTankId, myT.team===1?0xffea00:0xff4444, def.bulletSpeed, def.bulletDmg);
+        if(onlineMode) send({type:'fire',owner:myTankId,px:spawnPos.x,py:spawnPos.y,pz:spawnPos.z,vx:vel.x,vy:vel.y,vz:vel.z});
+      }
+
+      function spawnBullet(pos, vel, owner, col, speed, dmg) {
+        speed=speed||14; dmg=dmg||20;
+        const b=new THREE.Mesh(new THREE.SphereGeometry(0.15,6,6),new THREE.MeshBasicMaterial({color:col}));
+        b.position.copy(pos);
+        b.position.addScaledVector(vel.clone().normalize(), 1.1);
+        // Tracer glow
+        const glow=new THREE.Mesh(new THREE.SphereGeometry(0.25,6,6),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.3}));
+        glow.position.copy(b.position); scene.add(glow);
+        scene.add(b);
+        bullets.push({mesh:b,glow,vel:vel.clone(),owner,life:180,speed,dmg});
+        
+        let vol = 1;
+        const myT = tanks[myTankId];
+        if(myT && myT.hp > 0 && owner !== myTankId) {
+            const dist = myT.mesh.position.distanceTo(pos);
+            vol = Math.max(0, 1 - dist/40);
+        }
+        if(vol > 0.01) {
+            if(dmg >= 40) playSound('shoot_heavy', vol);
+            else if(dmg <= 10) playSound('shoot_light', vol);
+            else playSound('shoot', vol);
+        }
+      }
+
+      function spawnExplosion(x,y,z,isDeath,col) {
+        let vol = isDeath ? 1 : 0.4;
+        const myT = tanks[myTankId];
+        if(myT && myT.hp > 0) {
+            const dist = myT.mesh.position.distanceTo(new THREE.Vector3(x,y,z));
+            vol *= Math.max(0, 1 - dist/40);
+        }
+        if(vol > 0.01) playSound('explode', vol);
+
+        const cols=col?[col,0xffffff,0xff8800]:[0xff6600,0xff2200,0xffcc00,0xff8800,0xffffff];
+        const count=isDeath?45:22;
+        const group=[];
+        for(let i=0;i<count;i++){
+          const c=cols[Math.floor(Math.random()*cols.length)];
+          const size=(0.07+Math.random()*0.14)*(isDeath?1.8:1);
+          const p=new THREE.Mesh(new THREE.SphereGeometry(size,5,5),new THREE.MeshBasicMaterial({color:c}));
+          p.position.set(x,y,z);
+          const theta=Math.random()*Math.PI*2,phi=Math.random()*Math.PI;
+          const spd=(2.5+Math.random()*5)*(isDeath?1.5:1);
+          const vx=Math.sin(phi)*Math.cos(theta)*spd,vy=Math.abs(Math.cos(phi))*spd*0.9+2,vz=Math.sin(phi)*Math.sin(theta)*spd;
+          scene.add(p); group.push({mesh:p,vx,vy,vz});
+        }
+        const flash=new THREE.Mesh(
+          new THREE.SphereGeometry(isDeath?1.2:0.7,8,8),
+          new THREE.MeshBasicMaterial({color:col||0xffee88,transparent:true,opacity:0.9})
+        );
+        flash.position.set(x,y,z); scene.add(flash);
+        group.push({mesh:flash,vx:0,vy:0,vz:0,isFlash:true});
+        explosions.push({particles:group,life:isDeath?50:32,maxLife:isDeath?50:32});
+      }
+
+      /* ===================== MINES ===================== */
+
+      function placeMinePlayer() {
+        if(!gameActive||gameOver||mineCharges<=0||mineCd>0) return;
+        const myT=tanks[myTankId];
+        if(!myT||myT.hp<=0) return;
+        mineCharges--; mineCd=MINE_CD; updAbilityHUD();
+        playSound('ability');
+        placeMine(myT.mesh.position.x,myT.mesh.position.z,myT.team,false);
+        if(onlineMode) send({type:'mine_place',x:myT.mesh.position.x,z:myT.mesh.position.z,team:myT.team});
+      }
+
+      function placeMine(x,z,team,remote) {
+        const geo=new THREE.CylinderGeometry(0.35,0.35,0.12,8);
+        const mat=new THREE.MeshLambertMaterial({color:team===1?0x334400:0x440033});
+        const mesh=new THREE.Mesh(geo,mat);
+        mesh.position.set(x,0.06,z); scene.add(mesh);
+        // Blinking light
+        const light=new THREE.Mesh(
+          new THREE.SphereGeometry(0.08,6,6),
+          new THREE.MeshBasicMaterial({color:0xff0044})
+        );
+        light.position.set(x,0.18,z); scene.add(light);
+        mines.push({mesh,light,x,z,team,blinkTimer:0,armed:false,armTimer:1.5});
+      }
+
+      function updateMines(dt) {
+        if(!gameActive||gameOver) return;
+
+        for(let i=mines.length-1;i>=0;i--){
+          const m=mines[i];
+          if(!m.armed){m.armTimer-=dt;if(m.armTimer<=0)m.armed=true;}
+          m.blinkTimer+=dt;
+          m.light.visible=m.blinkTimer%(m.armed?0.4:0.8)<(m.armed?0.1:0.2);
+
+          if(!m.armed) continue;
+          // Check proximity
+          let triggered=false;
+          for(const k in tanks){
+            const t=tanks[k];
+            if(t.hp<=0||t.team===m.team) continue;
+            const dx=t.mesh.position.x-m.x, dz=t.mesh.position.z-m.z;
+            if(Math.sqrt(dx*dx+dz*dz)<1.5){
+              triggered=true;
+              // Damage all nearby
+              for(const k2 in tanks){
+                const t2=tanks[k2];
+                if(t2.hp<=0||t2.team===m.team) continue;
+                const dx2=t2.mesh.position.x-m.x, dz2=t2.mesh.position.z-m.z;
+                const dist=Math.sqrt(dx2*dx2+dz2*dz2);
+                if(dist<3.5){
+                  const dmg=Math.round(120*(1-dist/3.5));
+                  const isOwner=soloMode||(onlineMode&&(isHost?m.team===1:m.team===2));
+                  if(isOwner){damageTank(k2,dmg);if(onlineMode)send({type:'damage',id:k2,amt:dmg});}
+                }
+              }
+              break;
+            }
+          }
+          if(triggered){
+            spawnExplosion(m.x,0.3,m.z,false,0xff8800);
+            scene.remove(m.mesh); scene.remove(m.light);
+            mines.splice(i,1);
+          }
+        }
+      }
+
+      /* ===================== AIRSTRIKE ===================== */
+
+      function callAirstrike() {
+        if(!gameActive||gameOver||airstrikeCharges<=0||airstrikeCd>0) return;
+        const myT=tanks[myTankId];
+        if(!myT||myT.hp<=0) return;
+
+        // Show map overlay
+        const overlay = document.getElementById('map-overlay');
+        overlay.style.display = 'flex';
+        
+        // Draw map
+        const canvas = document.getElementById('strike-map');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0,0,400,400);
+        
+        ctx.fillStyle = '#1a1a3a'; ctx.fillRect(0,0,400,400);
+        
+        // Draw obstacles/ramps
+        ctx.fillStyle = '#3a4a2a';
+        obstacles.forEach(o => {
+            const x = (o.x / ARENA) * 200 + 200;
+            const y = (o.z / ARENA) * 200 + 200;
+            const r = (o.r / ARENA) * 200;
+            ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+        });
+        ctx.fillStyle = '#5a5a3a';
+        ramps.forEach(r => {
+            const w = (r.w / ARENA) * 200;
+            const d = (r.d / ARENA) * 200;
+            const x = (r.x / ARENA) * 200 + 200 - w/2;
+            const y = (r.z / ARENA) * 200 + 200 - d/2;
+            ctx.fillRect(x, y, w, d);
+        });
+        
+        // Draw tanks
+        for(const k in tanks) {
+            const t = tanks[k];
+            if(t.hp<=0) continue;
+            const x = (t.mesh.position.x / ARENA) * 200 + 200;
+            const y = (t.mesh.position.z / ARENA) * 200 + 200;
+            ctx.fillStyle = (k === myTankId) ? '#4f6ef7' : (t.team === myT.team ? '#00e676' : '#ff1744');
+            ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
+        }
+      }
+
+      function doAirstrikeAt(cx,cz,team,remote) {
+        airstrikeCd=Math.max(airstrikeCd,AIRSTRIKE_CD);
+        // Drop 8 bombs in a cluster over 2 seconds
+        for(let i=0;i<8;i++){
+          const delay=300+i*200;
+          const ox=(Math.random()-0.5)*12, oz=(Math.random()-0.5)*12;
+          const bx=Math.max(-(ARENA-2),Math.min(ARENA-2,cx+ox));
+          const bz=Math.max(-(ARENA-2),Math.min(ARENA-2,cz+oz));
+          setTimeout(()=>{
+            if(!gameActive) return;
+            spawnExplosion(bx,0.4,bz,true,0xff6600);
+            // Damage tanks in radius
+            for(const k in tanks){
+              const t=tanks[k];
+              if(t.hp<=0||t.team===team) continue;
+              const dx=t.mesh.position.x-bx, dz=t.mesh.position.z-bz;
+              const dist=Math.sqrt(dx*dx+dz*dz);
+              if(dist<4){
+                const dmg=Math.round(80*(1-dist/4));
+                const isOwner=soloMode||(onlineMode&&(isHost?team===1:team===2));
+                if(isOwner){damageTank(k,dmg);if(onlineMode)send({type:'damage',id:k,amt:dmg});}
+              }
+            }
+          },delay);
+        }
+      }
+
+      /* ===================== SOLDIERS ===================== */
+      let soldierCounter = 0;
+
+      function callSoldiers() {
+        if(!gameActive||gameOver||soldierCharges<=0||soldierCd>0) return;
+        const myT=tanks[myTankId];
+        if(!myT||myT.hp<=0) return;
+
+        soldierCharges--; soldierCd=SOLDIER_CD; updAbilityHUD();
+        playSound('ability');
+        showKill('🪖 DEPLOYING SQUAD!','#00e676');
+
+        spawnSoldiersAt(myTankId, myT.mesh.position.x, myT.mesh.position.z, myT.team);
+        if(onlineMode) send({type:'spawn_soldiers',owner:myTankId,x:myT.mesh.position.x,z:myT.mesh.position.z,team:myT.team});
+      }
+
+      function spawnSoldiersAt(ownerId, cx, cz, team) {
+        const count = 10;
+        for(let i=0; i<count; i++) {
+          const angle = (Math.PI*2/count) * i;
+          const sx = cx + Math.sin(angle)*3;
+          const sz = cz + Math.cos(angle)*3;
+          soldierCounter++;
+          const id = `soldier_${ownerId}_${soldierCounter}`;
+          spawnTank(id, false, team, 'Soldier', sx, sz, angle, 'soldier');
+        }
+      }
+
+      /* ===================== AI ===================== */
+
+      function collides(x,z,r) {
+        r=r||0.6;
+        for(const o of obstacles) if(Math.abs(x-o.x)<r+o.r&&Math.abs(z-o.z)<r+o.r) return true;
+        return false;
+      }
+      function clamp(p) {
+        p.x=Math.max(-(ARENA-2),Math.min(ARENA-2,p.x));
+        p.z=Math.max(-(ARENA-2),Math.min(ARENA-2,p.z));
+      }
+
+      function hasLineOfSight(x1,z1,x2,z2) {
+        const dist=Math.hypot(x2-x1,z2-z1);
+        const steps=Math.ceil(dist/0.8);
+        for(let i=1;i<=steps;i++){
+          if(collides(x1+(x2-x1)*(i/steps),z1+(z2-z1)*(i/steps),0.3)) return false;
+        }
+        return true;
+      }
+
+      function updateAI(dt) {
+        if(!gameActive||gameOver) return;
+        if(onlineMode&&!isHost) return;
+
+        for(const k in tanks){
+          const t=tanks[k];
+          if(t.isPlayer||t.hp<=0) continue;
+
+          const def=t.tankDef;
+          t.aiTimer+=dt;
+          let closest=null, minDist=Infinity;
+          for(const ek in tanks){
+            const et=tanks[ek];
+            if(et.team!==t.team&&et.hp>0){
+              const d=t.mesh.position.distanceTo(et.mesh.position);
+              if(d<minDist){minDist=d;closest=et;}
+            }
+          }
+
+          if(closest){
+            const dx=closest.mesh.position.x-t.mesh.position.x;
+            const dz=closest.mesh.position.z-t.mesh.position.z;
+            t.turretRy = Math.atan2(dx,dz);
+            const target=t.turretRy;
+            let diff=target-t.mesh.rotation.y;
+            while(diff>Math.PI)diff-=Math.PI*2;
+            while(diff<-Math.PI)diff+=Math.PI*2;
+            t.mesh.rotation.y+=diff*0.06;
+
+            const canSee=hasLineOfSight(t.mesh.position.x,t.mesh.position.z,closest.mesh.position.x,closest.mesh.position.z);
+            const preferDist=def===TANK_TYPES.sniper?18:def===TANK_TYPES.heavy?6:def===TANK_TYPES.light?10:def.isSoldier?4:8;
+
+            if(minDist>preferDist||!canSee){
+              const nx=t.mesh.position.x+Math.sin(t.mesh.rotation.y)*def.speed*dt;
+              const nz=t.mesh.position.z+Math.cos(t.mesh.rotation.y)*def.speed*dt;
+              if(!collides(nx,nz,0.7)){
+                t.mesh.position.x=nx; t.mesh.position.z=nz; t.stuckDir=0;
+              } else {
+                let sDir=t.stuckDir||(Math.random()<0.5?1:-1); t.stuckDir=sDir;
+                const sRot=t.mesh.rotation.y+(Math.PI/2)*sDir;
+                const snx=t.mesh.position.x+Math.sin(sRot)*def.speed*dt;
+                const snz=t.mesh.position.z+Math.cos(sRot)*def.speed*dt;
+                if(!collides(snx,snz,0.7)){t.mesh.position.x=snx;t.mesh.position.z=snz;}
+                else t.stuckDir*=-1;
+              }
+              clamp(t.mesh.position);
+            } else if(minDist<preferDist*0.5) {
+              // Back away if too close
+              const nx=t.mesh.position.x-Math.sin(t.mesh.rotation.y)*def.speed*0.5*dt;
+              const nz=t.mesh.position.z-Math.cos(t.mesh.rotation.y)*def.speed*0.5*dt;
+              if(!collides(nx,nz,0.7)){t.mesh.position.x=nx;t.mesh.position.z=nz;}
+              clamp(t.mesh.position);
+            }
+
+            if(t.aiTimer>def.fireRate+Math.random()*1.2){
+              if(canSee){
+                t.aiTimer=0;
+                
+                const targetPos = closest.mesh.position.clone();
+                targetPos.y += 0.6;
+                const spawnPos = t.mesh.position.clone();
+                spawnPos.y += 0.6;
+                const vel = targetPos.sub(spawnPos).normalize().multiplyScalar(def.bulletSpeed);
+                
+                spawnBullet(spawnPos, vel, k, t.team===1?0xffea00:0xff4444, def.bulletSpeed, def.bulletDmg);
+                if(onlineMode) send({type:'fire',owner:k,px:spawnPos.x,py:spawnPos.y,pz:spawnPos.z,vx:vel.x,vy:vel.y,vz:vel.z});
+              } else t.aiTimer=1.0;
+            }
+          }
+        }
+      }
+
+      /* ===================== MINIMAP ===================== */
+
+      function drawMinimap() {
+        const canvas=document.getElementById('minimap-canvas2');
+        const ctx=canvas.getContext('2d');
+        const W=90,H=90;
+        ctx.clearRect(0,0,W,H);
+        ctx.fillStyle='rgba(8,8,24,0.7)';
+        ctx.fillRect(0,0,W,H);
+
+        const toMap=(wx,wz)=>({
+          x:(wx/ARENA)*W*0.5+W/2,
+          y:(wz/ARENA)*H*0.5+H/2
+        });
+
+        // Obstacles (tiny dots)
+        ctx.fillStyle='#2a3a1a';
+        for(const o of obstacles){
+          const m=toMap(o.x,o.z);
+          ctx.beginPath(); ctx.arc(m.x,m.y,2,0,Math.PI*2); ctx.fill();
+        }
+
+        // Orbs
+        for(const o of orbs){
+          const m=toMap(o.x,o.z);
+          ctx.fillStyle=o.type==='airstrike'?'#ff6600':o.type==='mine'?'#ffcc00':'#00e676';
+          ctx.beginPath(); ctx.arc(m.x,m.y,2.5,0,Math.PI*2); ctx.fill();
+        }
+
+        // Mines
+        for(const m2 of mines){
+          const m=toMap(m2.x,m2.z);
+          ctx.fillStyle=m2.armed?'#ff0044':'#884422';
+          ctx.beginPath(); ctx.arc(m.x,m.y,2,0,Math.PI*2); ctx.fill();
+        }
+
+        // Tanks
+        for(const k in tanks){
+          const t=tanks[k];
+          if(t.hp<=0) continue;
+          const m=toMap(t.mesh.position.x,t.mesh.position.z);
+          ctx.fillStyle=t.isPlayer?(t.id===myTankId?'#00ffaa':'#44aaff'):(t.team===1?'#88ff44':'#ff4444');
+          ctx.beginPath(); ctx.arc(m.x,m.y,t.id===myTankId?4:2.5,0,Math.PI*2); ctx.fill();
+          // Direction arrow for player
+          if(t.id===myTankId){
+            ctx.strokeStyle='#00ffaa'; ctx.lineWidth=1;
+            ctx.beginPath();
+            ctx.moveTo(m.x,m.y);
+            ctx.lineTo(m.x+Math.sin(t.mesh.rotation.y)*7,m.y+Math.cos(t.mesh.rotation.y)*7);
+            ctx.stroke();
+          }
+        }
+
+        // Border
+        ctx.strokeStyle='#2a2a5a'; ctx.lineWidth=1;
+        ctx.strokeRect(0,0,W,H);
+      }
+
+      /* ===================== GAME LOOP ===================== */
+
+      function gameLoop() {
+        requestAnimationFrame(gameLoop);
+        const dt=Math.min(clock.getDelta(),0.05);
+        renderer.render(scene,camera);
+        if(!gameActive||gameOver) return;
+
+        // Raycaster for mouse
+        raycaster.setFromCamera(mouse, camera);
+        raycaster.ray.intersectPlane(floorPlane, intersectPoint = new THREE.Vector3());
+
+        const myT=tanks[myTankId];
+        if(myT&&myT.hp>0){
+          if (intersectPoint) {
+              const dx = intersectPoint.x - myT.mesh.position.x;
+              const dz = intersectPoint.z - myT.mesh.position.z;
+              myT.turretRy = Math.atan2(dx, dz);
+          }
+          
+          const def=myT.tankDef;
+          const spd=def.speed, prev=myT.mesh.position.clone();
+          if(keys['w']||keys['arrowup']){myT.mesh.position.x+=Math.sin(myT.mesh.rotation.y)*spd*dt;myT.mesh.position.z+=Math.cos(myT.mesh.rotation.y)*spd*dt;}
+          if(keys['s']||keys['arrowdown']){myT.mesh.position.x-=Math.sin(myT.mesh.rotation.y)*spd*dt;myT.mesh.position.z-=Math.cos(myT.mesh.rotation.y)*spd*dt;}
+          if(keys['a']||keys['arrowleft']) myT.mesh.rotation.y+=2.4*dt;
+          if(keys['d']||keys['arrowright']) myT.mesh.rotation.y-=2.4*dt;
+          clamp(myT.mesh.position);
+          if(collides(myT.mesh.position.x,myT.mesh.position.z,0.7)) myT.mesh.position.copy(prev);
+        }
+
+        if(onlineMode){
+          stateTimer+=dt;
+          if(stateTimer>=0.05){
+            stateTimer=0;
+            if(isHost){
+              let states=[];
+              for(const k in tanks) if(k!=='j'&&tanks[k].hp>0) states.push({id:k,x:tanks[k].mesh.position.x,z:tanks[k].mesh.position.z,ry:tanks[k].mesh.rotation.y});
+              send({type:'state',s:states});
+            } else if(myT&&myT.hp>0){
+              send({type:'state',s:[{id:myTankId,x:myT.mesh.position.x,z:myT.mesh.position.z,ry:myT.mesh.rotation.y}]});
+            }
+          }
+        }
+
+        updateAI(dt);
+        
+        for (const k in tanks) {
+            const t = tanks[k];
+            if (t.hp <= 0) continue;
+            
+            // Elevation
+            const elev = getElevation(t.mesh.position.x, t.mesh.position.z);
+            t.mesh.position.y += (elev - t.mesh.position.y) * 0.2;
+            
+            // Turret Rotation
+            if (t.mesh.userData && t.mesh.userData.turretGroup) {
+               const targetWorldRy = t.turretRy !== undefined ? t.turretRy : t.mesh.rotation.y;
+               let diff = targetWorldRy - t.mesh.rotation.y - t.mesh.userData.turretGroup.rotation.y;
+               while(diff>Math.PI)diff-=Math.PI*2;
+               while(diff<-Math.PI)diff+=Math.PI*2;
+               t.mesh.userData.turretGroup.rotation.y += diff * 0.2;
+            }
+        }
+
+        updateOrbs(dt);
+        updateMines(dt);
+        
+        let cdChanged = false;
+        if(airstrikeCd>0){airstrikeCd=Math.max(0,airstrikeCd-dt); cdChanged=true;}
+        if(mineCd>0){mineCd=Math.max(0,mineCd-dt); cdChanged=true;}
+        if(soldierCd>0){soldierCd=Math.max(0,soldierCd-dt); cdChanged=true;}
+        if(cdChanged) updAbilityHUD();
+
+        // Bullets
+        for(let i=bullets.length-1;i>=0;i--){
+          const b=bullets[i];
+          b.life--;
+          b.mesh.position.x+=b.vel.x*dt;
+          b.mesh.position.y+=b.vel.y*dt;
+          b.mesh.position.z+=b.vel.z*dt;
+          b.glow.position.copy(b.mesh.position);
+          b.glow.material.opacity=0.2+Math.random()*0.15;
+          let hit=b.life<=0||
+            Math.abs(b.mesh.position.x)>ARENA-0.5||
+            Math.abs(b.mesh.position.z)>ARENA-0.5;
+          if(!hit) for(const o of obstacles) if(Math.abs(b.mesh.position.x-o.x)<o.r+0.2&&Math.abs(b.mesh.position.z-o.z)<o.r+0.2){hit=true;break;}
+          if(!hit){
+            const ownerT=tanks[b.owner];
+            if(ownerT){
+              for(const k in tanks){
+                const target=tanks[k];
+                if(target.hp>0&&target.team!==ownerT.team&&target.mesh.position.distanceTo(b.mesh.position)<1.4){
+                  hit=true;
+                  const isOwner=soloMode||(onlineMode&&(isHost?b.owner!=='j':b.owner==='j'));
+                  if(isOwner){damageTank(k,b.dmg||20);if(onlineMode)send({type:'damage',id:k,amt:b.dmg||20});}
+                  break;
+                }
+              }
+            }
+          }
+          if(hit){
+            spawnExplosion(b.mesh.position.x,b.mesh.position.y,b.mesh.position.z,false);
+            scene.remove(b.mesh); scene.remove(b.glow); bullets.splice(i,1);
+          }
+        }
+
+        // Camera follow
+        if(myT&&myT.hp>0){
+          const camDist=6,camHeight=3.5;
+          const camBehindX=myT.mesh.position.x-Math.sin(myT.mesh.rotation.y)*camDist;
+          const camBehindZ=myT.mesh.position.z-Math.cos(myT.mesh.rotation.y)*camDist;
+          camera.position.x+=(camBehindX-camera.position.x)*0.1;
+          camera.position.y+=(camHeight-camera.position.y)*0.1;
+          camera.position.z+=(camBehindZ-camera.position.z)*0.1;
+          camera.lookAt(myT.mesh.position.x+Math.sin(myT.mesh.rotation.y)*4,0.4,myT.mesh.position.z+Math.cos(myT.mesh.rotation.y)*4);
+        } else {
+          camera.position.y+=(22-camera.position.y)*0.04;
+          camera.lookAt(0,0,0);
+        }
+
+        // Explosions
+        for(let ei=explosions.length-1;ei>=0;ei--){
+          const ex=explosions[ei];
+          ex.life--; const t=ex.life/ex.maxLife;
+          for(const p of ex.particles){
+            if(p.isFlash){p.mesh.scale.setScalar(1+(1-t)*2.2);p.mesh.material.opacity=t*0.85;}
+            else{p.mesh.position.x+=p.vx*0.016;p.mesh.position.y+=p.vy*0.016;p.mesh.position.z+=p.vz*0.016;p.vy-=12*0.016;p.mesh.material.opacity=t;p.mesh.material.transparent=true;}
+          }
+          if(ex.life<=0){ex.particles.forEach(p=>scene.remove(p.mesh));explosions.splice(ei,1);}
+        }
+
+        // Float name labels
+        const tempV=new THREE.Vector3();
+        for(const k in tanks){
+          const t=tanks[k];
+          if(t.hp>0){
+            tempV.copy(t.mesh.position); tempV.y+=1.6; tempV.project(camera);
+            const x=(tempV.x*.5+.5)*renderer.domElement.clientWidth;
+            const y=(tempV.y*-.5+.5)*renderer.domElement.clientHeight;
+            t.lbl.style.left=x+'px'; t.lbl.style.top=y+'px';
+            t.lbl.style.display=tempV.z>1?'none':'block';
+          } else t.lbl.style.display='none';
+        }
+
+        drawMinimap();
+      }
+
+      /* ===================== DAMAGE / END GAME ===================== */
+
+      function damageTank(id,amt) {
+        const t=tanks[id];
+        if(!t||t.hp<=0) return;
+        t.hp=Math.max(0,t.hp-amt);
+        const fg=document.getElementById('hpfg-'+id);
+        if(fg) fg.style.width=(t.hp/t.maxHp*100)+'%';
+        if(id===myTankId){setHP('p1',t.hp,t.maxHp);showKill(`OUCH! -${amt} HP`);}
+        if(t.hp<=0){
+          spawnExplosion(t.mesh.position.x,t.mesh.position.y,t.mesh.position.z,true);
+          scene.remove(t.mesh); t.lbl.style.display='none';
+          checkGameOver();
+        }
+      }
+
+      function checkGameOver() {
+        if(gameOver) return;
+        let t1=0,t2=0;
+        for(const k in tanks){
+          if(tanks[k].hp>0 && !tanks[k].tankDef.isSoldier){
+            if(tanks[k].team===1) t1++; else t2++;
+          }
+        }
+        const myTeam=tanks[myTankId]?tanks[myTankId].team:1;
+        if(t1===0){endGame(myTeam===2);if(onlineMode&&isHost)send({type:'gameover',winTeam:2});}
+        else if(t2===0){endGame(myTeam===1);if(onlineMode&&isHost)send({type:'gameover',winTeam:1});}
+      }
+
+      function endGame(win) {
+        gameOver=true; gameActive=false;
+        const rt=document.getElementById('rt');
+        rt.textContent=win?'🏆 YOUR TEAM WINS!':'💀 YOUR TEAM LOST';
+        rt.style.color=win?'#00e676':'#ff1744';
+        page('pg-result'); showOv();
+      }
+
+      /* ===================== RESTART ===================== */
+
+      function doRestart() {
+        Object.values(tanks).forEach(t=>{scene.remove(t.mesh);t.lbl.remove();}); tanks={};
+        bullets.forEach(b=>{scene.remove(b.mesh);scene.remove(b.glow);}); bullets=[];
+        explosions.forEach(ex=>ex.particles.forEach(p=>scene.remove(p.mesh))); explosions=[];
+        mines.forEach(m=>{scene.remove(m.mesh);scene.remove(m.light);}); mines=[];
+        orbs.forEach(o=>{scene.remove(o.mesh);scene.remove(o.ring);}); orbs=[];
+
+        ammo=5; reloading=false; gameOver=false; updAmmo();
+        airstrikeCharges=0; mineCharges=0; soldierCharges=0;
+        airstrikeCd=0; mineCd=0; soldierCd=0; soldierCounter=0;
+        orbSpawnTimer=0; updAbilityHUD();
+
+        myTankType=document.getElementById('tank-class').value||'standard';
+        const myName=document.getElementById('p-name').value.trim()||'PLAYER';
+        myTankId=isHost?'h':(!onlineMode?'s':'j');
+
+        // Spawn positions spread out in the large arena
+        // Z=44 and Z=-44 are free of the main obstacle clusters (outer ring is at 38).
+        const t1StartZ=44, t2StartZ=-44;
+        const startXs=[-20,-10,0,10,20];
+
+        spawnTank(soloMode?'s':'h',true,1,isHost?myName:(soloMode?myName:'HOST'),0,t1StartZ,Math.PI,myTankType);
+        for(let i=0;i<4;i++) spawnTank(`t1_b${i}`,false,1,`Bot 1-${i+1}`,startXs[i<2?i:i+1],t1StartZ,Math.PI);
+        for(let i=4;i<9;i++) spawnTank(`t1_b${i}`,false,1,`Bot 1-${i+1}`,startXs[i-4],t1StartZ+3,Math.PI);
+
+        if(soloMode){
+          for(let i=0;i<5;i++) spawnTank(`t2_b${i}`,false,2,`Bot 2-${i+1}`,startXs[i],t2StartZ,0);
+          for(let i=5;i<10;i++) spawnTank(`t2_b${i}`,false,2,`Bot 2-${i+1}`,startXs[i-5],t2StartZ-3,0);
+        } else {
+          spawnTank('j',true,2,isHost?opponentName:myName,0,t2StartZ,0,myTankType);
+          for(let i=0;i<4;i++) spawnTank(`t2_b${i}`,false,2,`Bot 2-${i+1}`,startXs[i<2?i:i+1],t2StartZ,0);
+          for(let i=4;i<9;i++) spawnTank(`t2_b${i}`,false,2,`Bot 2-${i+1}`,startXs[i-4],t2StartZ-3,0);
+        }
+
+        const def=TANK_TYPES[myTankType];
+        setHP('p1',def.maxHp,def.maxHp);
+        document.getElementById('p1n').textContent=myName;
+        document.getElementById('p1type').textContent=def.label;
+
+        // Spawn initial orbs
+        for(let i=0;i<6;i++) spawnOrb();
+
+        gameActive=true; hideOv();
+      }
+
+      function startSolo() {
+        destroyPeer(); soloMode=true; onlineMode=false; isHost=false;
+        myTankType=document.getElementById('tank-class').value||'standard';
+        setStatus(true,'SOLO MODE'); setRoomCode('TRAIN'); doRestart();
+      }
+
+      /* ===================== BUTTON HANDLERS ===================== */
+
+      document.getElementById('btn-create').onclick=createRoom;
+      document.getElementById('btn-cancel').onclick=()=>{destroyPeer();page('pg-main');};
+      document.getElementById('btn-join').onclick=()=>{document.getElementById('je').textContent='';page('pg-join');};
+      document.getElementById('btn-back').onclick=()=>{destroyPeer();document.getElementById('btn-dojoin').textContent='JOIN';page('pg-main');};
+      document.getElementById('btn-solo').onclick=startSolo;
+      document.getElementById('btn-again').onclick=()=>{if(onlineMode)send({type:'restart'});doRestart();};
+      document.getElementById('btn-tomenu').onclick=()=>{destroyPeer();soloMode=false;gameActive=false;setStatus(false,'OFFLINE');showOv();page('pg-main');};
+      document.getElementById('bmenu').onclick=()=>{gameActive=false;showOv();page('pg-main');};
+      document.getElementById('btn-dojoin').onclick=()=>{
+        const c=document.getElementById('ci').value.trim().toUpperCase();
+        if(c.length!==4) return document.getElementById('je').textContent='Enter a 4-character code';
+        joinRoom(c);
+      };
+      document.getElementById('ci').oninput=function(){this.value=this.value.toUpperCase();};
+
+      const bfi=document.getElementById('bfi');
+      bfi.onmousedown=bfi.ontouchstart=e=>{e.preventDefault();fireBullet();};
+      document.getElementById('bq').onmousedown=e=>{e.preventDefault();callAirstrike();};
+      document.getElementById('be').onmousedown=e=>{e.preventDefault();placeMinePlayer();};
+      document.getElementById('br_btn').onmousedown=e=>{e.preventDefault();callSoldiers();};
+      document.getElementById('c3d').addEventListener('click',()=>fireBullet());
+
+      [['bl','a'],['bu','w'],['bd2','s'],['br','d']].forEach(([id,k])=>{
+        const el=document.getElementById(id);
+        el.onmousedown=el.ontouchstart=e=>{e.preventDefault();keys[k]=true;};
+        el.onmouseup=el.ontouchend=e=>{e.preventDefault();keys[k]=false;};
+      });
+
+      document.addEventListener('keydown',e=>{
+        keys[e.key.toLowerCase()]=true;
+        if(e.key===' '){e.preventDefault();fireBullet();}
+        if(e.key.toLowerCase()==='q'){e.preventDefault();callAirstrike();}
+        if(e.key.toLowerCase()==='e'){e.preventDefault();placeMinePlayer();}
+        if(e.key.toLowerCase()==='r'){e.preventDefault();callSoldiers();}
+      });
+      document.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+      
+      document.addEventListener('mousedown',e=>{
+        if(e.target.tagName==='BUTTON'||e.target.classList.contains('cb')||e.target.classList.contains('mb')||e.target.classList.contains('ri')){
+          playSound('ui');
+        }
+      });
+      
+      document.getElementById('strike-map').addEventListener('click', function(e) {
+         const rect = this.getBoundingClientRect();
+         const cx = e.clientX - rect.left;
+         const cy = e.clientY - rect.top;
+         const worldX = ((cx - 200) / 200) * ARENA;
+         const worldZ = ((cy - 200) / 200) * ARENA;
+         
+         document.getElementById('map-overlay').style.display = 'none';
+         
+         const myT = tanks[myTankId];
+         if (!myT) return;
+         airstrikeCharges--; airstrikeCd=AIRSTRIKE_CD; updAbilityHUD();
+         playSound('ability');
+         showKill('💣 AIRSTRIKE INCOMING!','#ff6600');
+         
+         doAirstrikeAt(worldX, worldZ, myT.team, false);
+         if(onlineMode) send({type:'airstrike',x:worldX,z:worldZ,team:myT.team});
+      });
+      
+      document.addEventListener('mousemove', e => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      });
+      
+      window.addEventListener('resize',()=>{
+        const W=document.getElementById('c3d').parentElement.offsetWidth||900;
+        renderer.setSize(W,480);camera.aspect=W/480;camera.updateProjectionMatrix();
+      });
+
+      initThree();
+      gameLoop();
+
+    })();
+  </script>
+</body>
+
+</html>
